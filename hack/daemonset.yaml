@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aks-gpu-daemonset
+  namespace: aks-gpu
+spec:
+  selector:
+    matchLabels:
+      app: aks-gpu-daemonset
+  template:
+    metadata:
+      labels:
+        app: aks-gpu-daemonset
+    spec:
+      containers:
+      - name: aks-gpu-daemonset
+        image: aks-gpu-daemonset:0.0.1
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-root
+          mountPath: /hostfs
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+      terminationGracePeriodSeconds: 30
