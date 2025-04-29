@@ -29,6 +29,7 @@ spec:
       - name: host-root
         hostPath:
           path: /
+          type: Directory
       tolerations:
       - key: "node.kubernetes.io/not-ready"
         operator: "Exists"
