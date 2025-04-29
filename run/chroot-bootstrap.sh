@@ -4,4 +4,5 @@ set -e
 set -x
 set -o pipefail
 
-/usr/sbin/chroot "/hostfs" ./node-init.sh
+cp ./node-init.sh /hostfs/tmp/node-init.sh
+/usr/sbin/chroot "/hostfs" /tmp/node-init.sh
