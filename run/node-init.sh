@@ -4,6 +4,8 @@ set -e
 set -x
 set -o pipefail
 
+/usr/sbin/chroot "/hostfs"
+
 add-apt-repository ppa:canonical-kernel-team/ppa
 apt update
 apt install linux-azure-nvidia
