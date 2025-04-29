@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-COPY ./run/node-init.sh run/
+COPY --chmod=755 ./run/node-init.sh run/
 
 ENTRYPOINT ["/bin/bash", "-c"]
 CMD ["./run/node-init.sh"]
