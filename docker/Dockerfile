@@ -1,8 +1,8 @@
 FROM ubuntu:24.04
 
-COPY --chmod=755 ./run/node-init.sh run/
+COPY --chmod=755 ./run/node-init.sh ./run/chroot-bootstrap.sh /
 
 ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["./run/node-init.sh"]
+CMD ["/chroot-bootstrap.sh"]
 
 #ENTRYPOINT ["/bin/bash", "-c"]
