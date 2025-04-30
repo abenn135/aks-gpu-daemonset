@@ -19,17 +19,43 @@ spec:
     spec:
       containers:
       - name: aks-gpu-daemonset
-        image: aks-gpu-daemonset:0.0.1
+        image: ubuntu:24.04
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -exc
+        - |
+          add-apt-repository ppa:canonical-kernel-team/ppa
+          apt-get update
+          apt-get install linux-azure-nvidia
+          cat <<EOF | tee -a /etc/default/grub.d/60-azure-nvidia.cfg
+          GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX console=tty1 console=ttyAMA0 earlycon=pl011,0xeffec000 initcall_blacklist=arm_pmu_acpi_init nvme_core.io_timeout=240 iommu.passthrough=1 irqchip.gicv3_nolpi=y nvidia.NVreg_NvLinkDisable=0 arm_smmu_v3.disable_msipolling=1"
+          EOF
+          update-grub
+          echo "blacklist nouveau " | tee -a /etc/modprobe.d/blacklist.conf
+          echo "done...... please reboot"
+          sleep infinity
         securityContext:
           privileged: true
-        volumeMounts:
-        - name: host-root
-          mountPath: /hostfs
-      volumes:
-      - name: host-root
-        hostPath:
-          path: /
-          type: Directory
+        # volumeMounts:
+        # - name: host-root
+        #   mountPath: /hostfs
+      # volumes:
+      # - name: host-root
+      #   hostPath:
+      #     path: /
+      #     type: Directory
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
       tolerations:
       - key: "node.kubernetes.io/not-ready"
         operator: "Exists"

@@ -5,6 +5,7 @@ set -x
 set -o pipefail
 
 export PATH=$PATH:/usr/bin
+export
 
 add-apt-repository ppa:canonical-kernel-team/ppa
 apt-get update
