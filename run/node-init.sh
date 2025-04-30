@@ -4,6 +4,8 @@ set -e
 set -x
 set -o pipefail
 
+export PATH=$PATH:/usr/bin
+
 add-apt-repository ppa:canonical-kernel-team/ppa
 apt update
 apt install linux-azure-nvidia
