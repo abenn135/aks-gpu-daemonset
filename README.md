@@ -1,5 +1,9 @@
 # aks-gpu-daemonset
 
-Daemonset to install a custom Linux kernel and customize the environment for GPU hardware.
+Daemonset to install a custom Linux kernel and customize the environment for GPU hardware. The daemonset is in hack/daemonset.yaml. Run it, then you'll need to restart the node (this is tricky to do from the daemonset itself).
 
-To use the associated Dockerfile, you will need to run it as a privileged container. Expect the node to restart during this process.
+```bash
+kubectl debug node/<node-name> -it --image=mcr.microsoft.com/cbl-mariner/busybox:2.0
+chroot /host
+reboot
+```
