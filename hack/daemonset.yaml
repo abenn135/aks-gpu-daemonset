@@ -39,10 +39,11 @@ spec:
           cat <<EOF | tee -a /etc/default/grub.d/60-azure-nvidia.cfg
           GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX console=tty1 console=ttyAMA0 earlycon=pl011,0xeffec000 initcall_blacklist=arm_pmu_acpi_init nvme_core.io_timeout=240 iommu.passthrough=1 irqchip.gicv3_nolpi=y nvidia.NVreg_NvLinkDisable=0 arm_smmu_v3.disable_msipolling=1"
           EOF
-          sed -i 's|GRUB_DEFAULT=0|#GRUB_DEFAULT=0\nGRUB_DEFAULT="gnulinux-advanced-/dev/nvme0n1p1>gnulinux-6.8.0-1016-azure-nvidia-advanced-/dev/nvme0n1p1"|' /etc/default/grub
+          sed -i 's|^GRUB_DEFAULT=0|#GRUB_DEFAULT=0\nGRUB_DEFAULT="Advanced options for Ubuntu>Ubuntu, with Linux 6.8.0-1016-azure-nvidia"|' /etc/default/grub
           sed -i 's|GRUB_TIMEOUT=0|GRUB_TIMEOUT=5|' /etc/default/grub
           update-grub
           echo "blacklist nouveau " | tee -a /etc/modprobe.d/blacklist.conf
+          update-grub
           echo "done...... please reboot"
           sleep infinity
         securityContext:
