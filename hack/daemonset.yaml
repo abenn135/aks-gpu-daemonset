@@ -17,7 +17,7 @@ spec:
       labels:
         app: aks-gpu-daemonset
     spec:
-      containers:
+      initContainers:
       - name: aks-gpu-daemonset
         image: ubuntu:24.10
         command:
@@ -33,6 +33,13 @@ spec:
         - bash
         - -exc
         - |
+          set -x
+          set -e
+          set -o pipefail
+          if [ -f /etc/aks-gpu-daemonset/donefile ]; then
+            echo "aks-gpu-daemonset already done, exit"
+            exit 0
+          fi
           add-apt-repository ppa:canonical-kernel-team/ppa
           apt-get update
           apt-get install -y linux-azure-nvidia
@@ -44,18 +51,41 @@ spec:
           update-grub
           echo "blacklist nouveau " | tee -a /etc/modprobe.d/blacklist.conf
           update-grub
-          echo "done...... please reboot"
-          sleep infinity
+          echo "done... writing donefile"
+          mkdir -p /etc/aks-gpu-daemonset
+          touch /etc/aks-gpu-daemonset/donefile
+          echo "donefile created"
+          echo "rebooting in 5 seconds..."
+          sleep 5
+          reboot
         securityContext:
           privileged: true
-        # volumeMounts:
-        # - name: host-root
-        #   mountPath: /hostfs
-      # volumes:
-      # - name: host-root
-      #   hostPath:
-      #     path: /
-      #     type: Directory
+      containers:
+      - name: is-it-done
+        image: ubuntu:24.10
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -exc
+        - |
+          set -x
+          set -e
+          set -o pipefail
+          if [ ! -f /etc/aks-gpu-daemonset/donefile ]; then
+            echo "aks-gpu-daemonset not done, exit"
+            exit 1
+          fi
+          echo "aks-gpu-daemonset done, exit"
+        securityContext:
+          privileged: true
       hostNetwork: true
       hostPID: true
       hostIPC: true
