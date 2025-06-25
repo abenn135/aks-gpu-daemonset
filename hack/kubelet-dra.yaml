@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aks-gpu
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aks-dra-daemonset
+  namespace: aks-gpu
+spec:
+  selector:
+    matchLabels:
+      app: aks-dra-daemonset
+  template:
+    metadata:
+      labels:
+        app: aks-dra-daemonset
+    spec:
+      initContainers:
+      - name: aks-dra-daemonset
+        image: ubuntu:24.10
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -exc
+        - |
+          set -x
+          set -e
+          set -o pipefail
+          if [ -f /etc/aks-dra-daemonset/donefile ]; then
+            echo "aks-dra-daemonset already done, exit"
+            exit 0
+          fi
+          if grep -e 'KUBELET_FLAGS=.* --feature-gates=DynamicResourceAllocation=true' /etc/default/kubelet; then
+          	return 0;
+          fi
+          sed -i '/^KUBELET_FLAGS=/ s/$/ --feature-gates=DynamicResourceAllocation=true/' /etc/default/kubelet
+          systemctl restart kubelet.service
+        securityContext:
+          privileged: true
+      containers:
+      - name: is-it-done
+        image: ubuntu:24.10
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -exc
+        - |
+          set -x
+          set -e
+          set -o pipefail
+          if [ ! -f /etc/aks-dra-daemonset/donefile ]; then
+            echo "aks-dra-daemonset not done, exit"
+            exit 1
+          fi
+          echo "aks-dra-daemonset done, exit"
+        securityContext:
+          privileged: true
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      restartPolicy: OnFailure
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+      terminationGracePeriodSeconds: 30
