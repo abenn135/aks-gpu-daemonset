@@ -40,10 +40,13 @@ spec:
             echo "aks-dra-daemonset already done, exit"
             exit 0
           fi
+          mkdir /etc/aks-dra-daemonset/
           if grep -e 'KUBELET_FLAGS=.* --feature-gates=DynamicResourceAllocation=true' /etc/default/kubelet; then
+            touch /etc/aks-dra-daemonset/donefile
           	return 0;
           fi
           sed -i '/^KUBELET_FLAGS=/ s/$/ --feature-gates=DynamicResourceAllocation=true/' /etc/default/kubelet
+          touch /etc/aks-dra-daemonset/donefile
           systemctl restart kubelet.service
         securityContext:
           privileged: true
@@ -70,13 +73,15 @@ spec:
             echo "aks-dra-daemonset not done, exit"
             exit 1
           fi
-          echo "aks-dra-daemonset done, exit"
+          echo "aks-dra-daemonset done, wait forever"
+          while true; do
+            sleep 3600
+          done
         securityContext:
           privileged: true
       hostNetwork: true
       hostPID: true
       hostIPC: true
-      restartPolicy: OnFailure
       tolerations:
       - key: "node.kubernetes.io/not-ready"
         operator: "Exists"
