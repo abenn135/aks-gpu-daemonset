@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aks-gpu
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: aks-cdi-daemonset
+  namespace: aks-gpu
+spec:
+  selector:
+    matchLabels:
+      app: aks-cdi-daemonset
+  template:
+    metadata:
+      labels:
+        app: aks-cdi-daemonset
+    spec:
+      initContainers:
+      - name: aks-cdi-daemonset
+        image: ubuntu:24.10
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -exc
+        - |
+          set -x
+          set -e
+          set -o pipefail
+          if [ -f /etc/aks-cdi-daemonset/donefile ]; then
+            echo "aks-cdi-daemonset already done, exit"
+            exit 0
+          fi
+          mkdir /etc/aks-cdi-daemonset/
+          if grep -e 'enable_cdi = true' /etc/containerd/config.toml; then
+            touch /etc/aks-cdi-daemonset/donefile
+          	return 0;
+          fi
+          sed -i '/^[plugins."io.containerd.grpc.v1.cri"]/ s/$/\n  enable_cdi = true/' /etc/containerd/config.toml
+          touch /etc/aks-cdi-daemonset/donefile
+          systemctl restart containerd.service
+        securityContext:
+          privileged: true
+      containers:
+      - name: is-it-done
+        image: ubuntu:24.10
+        command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - bash
+        - -exc
+        - |
+          set -x
+          set -e
+          set -o pipefail
+          if [ ! -f /etc/aks-cdi-daemonset/donefile ]; then
+            echo "aks-cdi-daemonset not done, exit"
+            exit 1
+          fi
+          echo "aks-cdi-daemonset done, wait forever"
+          while true; do
+            sleep 3600
+          done
+        securityContext:
+          privileged: true
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+      terminationGracePeriodSeconds: 30
